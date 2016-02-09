@@ -18,9 +18,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Created by edgars.martinovs on 12/1/2015.
- */
 public class ZnConnector implements Runnable {
     private static final String TAG = main.TAG;//"znconn";
     public static byte SUB = 1; //Client subscribe/unsubscribe message to server, to subscribe to another device's data .

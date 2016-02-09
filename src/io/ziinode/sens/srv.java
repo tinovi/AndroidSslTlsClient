@@ -15,9 +15,6 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 
-/**
- * Created by edgars.martinovs on 12/1/2015.
- */
 public class srv extends Service implements SensorEventListener,LocationListener {
     private static final String TAG = main.TAG;//"znsrv";
 
