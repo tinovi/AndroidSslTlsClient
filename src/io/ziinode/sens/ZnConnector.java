@@ -1,7 +1,6 @@
 package io.ziinode.sens;
 
 import android.util.Log;
-import android.widget.Toast;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -12,7 +11,6 @@ import java.net.Socket;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -27,7 +25,7 @@ public class ZnConnector implements Runnable {
     public static byte ENQ = 5; //Client sends enquiry message just after creating TCP connection with server
     public static byte CONN_ACK = 6; //Server sends acknowledge after device ENQ
     public static byte TRAP = 7;  //Client sends metrics data sent to server
-    public static byte ANNOTATION = 8;  //Client sends annotation data sent to server
+    public static byte EVENT = 8;  //Client sends event data sent to server
     public static byte LOG = 9;  //Client sends log data sent to server
     public static byte REZ = 10; //reserved
 
