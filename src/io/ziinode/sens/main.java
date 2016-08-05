@@ -104,7 +104,7 @@ public class main extends Activity implements ZnConnectorInf{
         if(ii!=null){
             interval.setText(ii);
         }
-        znc = new ZnConnector(this,TYPE,(short)0);
+        znc = new ZnConnector(this,this,TYPE,(short)0);
     }
 
     public void sendTrap(){
@@ -115,6 +115,7 @@ public class main extends Activity implements ZnConnectorInf{
                 znc.getOut().writeDouble(d);
             }
             znc.getOut().flush();
+            Log.i(TAG,"trap");
         }catch (Exception ex){
             znc.setState(ZnConnector.STATE_GET_SERVER);
         }
@@ -144,7 +145,9 @@ public class main extends Activity implements ZnConnectorInf{
     @Override
     public void onStatus(int status) {
         if(status==ZnConnector.STATE_DISCONNECED){
-            future.cancel(false);
+            if(future!=null) {
+                future.cancel(false);
+            }
             setStatus("Disconnected");
             runOnUiThread(new Runnable() {
                 @Override

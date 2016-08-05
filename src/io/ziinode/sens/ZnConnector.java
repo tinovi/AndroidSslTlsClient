@@ -1,6 +1,18 @@
 package io.ziinode.sens;
 
+import android.content.Context;
 import android.util.Log;
+import org.apache.http.conn.ssl.SSLSocketFactory;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
+import java.security.cert.Certificate;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -10,6 +22,7 @@ import java.net.HttpURLConnection;
 import java.net.Socket;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.security.KeyStore;
 import java.util.Arrays;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -38,7 +51,7 @@ public class ZnConnector implements Runnable {
     private volatile int state = STATE_DISCONNECED;
 
     ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-    Socket socket;
+    SSLSocket socket;
     DataInputStream in;
     DataOutputStream out;
 
@@ -91,8 +104,9 @@ public class ZnConnector implements Runnable {
     ZnConnectorInf m;
     private String type;
     private short version;
-
-    public ZnConnector(ZnConnectorInf m, String type, short version) {
+    final Context context;
+    public ZnConnector(Context context, ZnConnectorInf m, String type, short version) {
+        this.context = context;
         this.m = m;
         this.type = type;
         this.version = version;
@@ -108,8 +122,8 @@ public class ZnConnector implements Runnable {
             if (conni()) {
                 if (in.available() > 0) {
                     byte cmd = in.readByte();
-                    System.out.print(cmd);
                     if (CONN_ACK == cmd) {
+                        Log.i(TAG, "connack");
                         setState(STATE_ONLINE);
                     } else if (cmd == ACK) {
                         Log.i(TAG, "ack");
@@ -140,7 +154,14 @@ public class ZnConnector implements Runnable {
 //    private static String url = "http://ziinode.io/site/v1/node/host/";
     private void conn(String server, int port, String key, String pin) {
         try {
-            socket = new Socket(server, port);
+
+            SSLSocketFactory socketFactory = newSslSocketFactory();
+            //socketFactory.setHostnameVerifier(SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+            socket = (SSLSocket) socketFactory.createSocket(new Socket(server,port), server, port, false);
+            socket.startHandshake();
+
+            printServerCertificate(socket);
+            printSocketInfo(socket);
             in = new DataInputStream(socket.getInputStream());
             out = new DataOutputStream(socket.getOutputStream());
             out.write(ENQ);
@@ -149,6 +170,7 @@ public class ZnConnector implements Runnable {
             out.write(pin.getBytes("US-ASCII"));
             out.writeShort(version);
             out.flush();
+            Log.e(TAG, "conn:OK");
         } catch (Exception ee) {
             Log.e(TAG, "conn:", ee);
             setState(STATE_GET_SERVER);
@@ -209,7 +231,7 @@ public class ZnConnector implements Runnable {
                     setState(STATE_CONNECTING);
                     conn.disconnect();
                     Log.i(TAG, "Server addr:" + adr);
-                    conn(adr, 8787, m.getDsid(), m.getPin());
+                    conn(adr, 9797, m.getDsid(), m.getPin());
                 } else {
                     Log.e(TAG,"faled to open URL:" + ttt);
                 }
@@ -218,6 +240,66 @@ public class ZnConnector implements Runnable {
             Log.e(TAG,"faled to open URL" + ttt, ee);
         }
         return false;
+    }
+
+    private void printServerCertificate(SSLSocket socket) {
+        try {
+            Certificate[] serverCerts =
+                    socket.getSession().getPeerCertificates();
+            for (int i = 0; i < serverCerts.length; i++) {
+                Certificate myCert = serverCerts[i];
+                Log.i(TAG,"====Certificate:" + (i+1) + "====");
+                Log.i(TAG,"-Public Key-\n" + myCert.getPublicKey());
+                Log.i(TAG,"-Certificate Type-\n " + myCert.getType());
+
+                System.out.println();
+            }
+        } catch (SSLPeerUnverifiedException e) {
+            Log.i(TAG,"Could not verify peer");
+            e.printStackTrace();
+            System.exit(-1);
+        }
+    }
+    private void printSocketInfo(SSLSocket s) {
+        Log.i(TAG,"Socket class: "+s.getClass());
+        Log.i(TAG,"   Remote address = "
+                +s.getInetAddress().toString());
+        Log.i(TAG,"   Remote port = "+s.getPort());
+        Log.i(TAG,"   Local socket address = "
+                +s.getLocalSocketAddress().toString());
+        Log.i(TAG,"   Local address = "
+                +s.getLocalAddress().toString());
+        Log.i(TAG,"   Local port = "+s.getLocalPort());
+        Log.i(TAG,"   Need client authentication = "
+                +s.getNeedClientAuth());
+        SSLSession ss = s.getSession();
+        Log.i(TAG,"   Cipher suite = "+ss.getCipherSuite());
+        Log.i(TAG,"   Protocol = "+ss.getProtocol());
+    }
+    private SSLSocketFactory newSslSocketFactory() {
+        try {
+            // Get an instance of the Bouncy Castle KeyStore format
+            KeyStore trusted = KeyStore.getInstance("BKS");
+            // Get the raw resource, which contains the keystore with
+            // your trusted certificates (root and any intermediate certs)
+            InputStream in = context.getResources().openRawResource(R.raw.znandroid);
+            try {
+                // Initialize the keystore with the provided trusted certificates
+                // Also provide the password of the keystore
+                trusted.load(in, "ziinode".toCharArray());
+            } finally {
+                in.close();
+            }
+            // Pass the keystore to the SSLSocketFactory. The factory is responsible
+            // for the verification of the server certificate.
+            SSLSocketFactory sf = new SSLSocketFactory(trusted);
+            // Hostname verification from certificate
+            // http://hc.apache.org/httpcomponents-client-ga/tutorial/html/connmgmt.html#d4e506
+            sf.setHostnameVerifier(SSLSocketFactory.STRICT_HOSTNAME_VERIFIER);
+            return sf;
+        } catch (Exception e) {
+            throw new AssertionError(e);
+        }
     }
 }
 
