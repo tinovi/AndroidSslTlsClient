@@ -1,5 +1,5 @@
 This is Android and JAVA demo application for [www.ziinode.io](www.ziinode.io) IoT cloud service.
-It sends to cloud android GPS and sensor data to ziinode servers. 
+It sends to cloud android GPS and sensor data to ziinode servers using plain SSL/TLS secure connection protocol.
 
 ######Demo application
 1. [Download `ZiinodeSens.apk`](http://ziinode.io/get/ZiinodeSens.apk) and install to your phone. Run application; in field `DsId` by default should be named `ANDSENS`, then DsId(Datasource Identification) will be generated automatically(If you want you can type your DsId). This field  allows contain exact seven letters and numbers.

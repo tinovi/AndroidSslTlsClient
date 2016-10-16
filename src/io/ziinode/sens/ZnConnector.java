@@ -177,7 +177,7 @@ public class ZnConnector implements Runnable {
         }
     }
 
-    public static final String URL = "http://ziinode.io/api/v1/node/host/";
+    public static final String URL = "http://tinovi.io/api/v1/node/host/";
     long lastTime = 0;
 
     protected boolean conni() {
