@@ -8,6 +8,6 @@ public interface ZnConnectorInf {
     public String getDsid();
     public String getPin();
     public int getInterval();
-    public void onAck();
+    public void onAck(short id);
     public void onMessage(byte type, ByteBuffer msg);
 }

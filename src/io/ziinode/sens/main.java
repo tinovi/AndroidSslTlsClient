@@ -106,10 +106,18 @@ public class main extends Activity implements ZnConnectorInf{
         }
         znc = new ZnConnector(this,this,TYPE,(short)0);
     }
-
+    short cnt = 0;
+    public short nextCnt(){
+        cnt++;
+        if(cnt==0){
+            cnt++;
+        }
+        return cnt;
+    }
     public void sendTrap(){
         try {
             znc.getOut().write(ZnConnector.TRAP);
+            znc.getOut().writeShort(nextCnt());
             znc.getOut().writeShort((short) 56);
             for (double d : s.data) {
                 znc.getOut().writeDouble(d);
@@ -188,7 +196,7 @@ public class main extends Activity implements ZnConnectorInf{
     }
 
     @Override
-    public void onAck() {
+    public void onAck(short id) {
 
     }
 

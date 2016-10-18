@@ -3,6 +3,8 @@ package io.ziinode.sens;
 import android.content.Context;
 import android.util.Log;
 import org.apache.http.conn.ssl.SSLSocketFactory;
+
+import java.nio.ByteOrder;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -56,6 +58,13 @@ public class ZnConnector implements Runnable {
     DataOutputStream out;
 
     public void stop() {
+        if(state == STATE_ONLINE){
+            try {
+                out.write(DISCONN);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
         setState(STATE_DISCONNECED);
         if (future != null) {
             future.cancel(false);
@@ -82,6 +91,7 @@ public class ZnConnector implements Runnable {
                 setState(STATE_GET_SERVER);
             }
             future = scheduler.scheduleAtFixedRate(this, 0, 20, TimeUnit.MILLISECONDS);
+            Log.i(TAG, "ZN STARTED");
         }
     }
 
@@ -120,14 +130,21 @@ public class ZnConnector implements Runnable {
     public void run() {
         try {
             if (conni()) {
-                if (in.available() > 0) {
+                //if (in.available() > 0) {
                     byte cmd = in.readByte();
+                    Log.i(TAG, "cmd:"+cmd);
                     if (CONN_ACK == cmd) {
-                        Log.i(TAG, "connack");
+                        Log.i(TAG, "!!! connack");
                         setState(STATE_ONLINE);
                     } else if (cmd == ACK) {
-                        Log.i(TAG, "ack");
-                        m.onAck();
+                        //short aa = in.readShort();
+                        ByteBuffer bb = ByteBuffer.allocate(2);
+                        bb.order(ByteOrder.LITTLE_ENDIAN);
+                        bb.put(in.readByte());
+                        bb.put(in.readByte());
+                        short aa = bb.getShort(0);
+                        Log.i(TAG, "ack:"+(aa&0xFFFF));
+                        m.onAck(aa);
                         //ack
                     } else { //drain
                         Log.i(TAG, "drain:" + cmd);
@@ -135,7 +152,7 @@ public class ZnConnector implements Runnable {
                         in.readFully(bb);
                         m.onMessage(cmd, ByteBuffer.wrap(bb));
                     }
-                }
+                //}
             }
         } catch (Exception e) {
             Log.e(TAG, "run:", e);
@@ -170,7 +187,7 @@ public class ZnConnector implements Runnable {
             out.write(pin.getBytes("US-ASCII"));
             out.writeShort(version);
             out.flush();
-            Log.e(TAG, "conn:OK");
+            Log.e(TAG, "ENQ SEND!!!");
         } catch (Exception ee) {
             Log.e(TAG, "conn:", ee);
             setState(STATE_GET_SERVER);
