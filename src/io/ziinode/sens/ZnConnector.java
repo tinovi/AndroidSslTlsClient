@@ -167,8 +167,6 @@ public class ZnConnector implements Runnable {
     }
 
 
-    //    private static String url = "http://localhost:8800/site/v1/node/host/";
-//    private static String url = "http://ziinode.io/site/v1/node/host/";
     private void conn(String server, int port, String key, String pin) {
         try {
 

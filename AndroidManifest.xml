@@ -19,7 +19,6 @@
                 >
         </service>
     </application>
-    <uses-sdk android:minSdkVersion="14"/>
     <uses-feature android:name="android.hardware.location" android:required="false" />
     <uses-feature android:name="android.hardware.sensor.barometer" android:required="false"/>
     <uses-feature android:name="android.hardware.sensor.light" android:required="false"/>
